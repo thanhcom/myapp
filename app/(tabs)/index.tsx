@@ -1,13 +1,39 @@
 import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { Button, Platform, StyleSheet, Text, View } from 'react-native';
 
 import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { connectMQTT, publishMQTT } from '@/lib/mqtt';
+import { Account } from '@/types/account';
 import { Link } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { supabase } from '../../lib/supabase';
 
 export default function HomeScreen() {
+  const [count, setCount] = useState(0);
+  const [users, setUsers] = useState<Account[]>([]);
+  const [temp, setTemp] = useState<string>('---');
+  useEffect(() => {
+   loadUsers();
+   connectMQTT((value) => {
+      setTemp(value);
+    });
+  }, []);
+
+  async function loadUsers() {
+    const { data, error } = await supabase
+      .from('account')
+      .select('*');
+
+    if (error) {
+      console.log('ERROR:', error);
+    } else {
+      setUsers(data);
+    }
+  }
+  const thanh = (data: string) => data + 'Hello from arrow function!';
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -21,6 +47,12 @@ export default function HomeScreen() {
         <ThemedText type="title">Welcome!</ThemedText>
         <HelloWave />
       </ThemedView>
+      <ThemedText style={{ marginBottom: 16, fontWeight:'bold'}}>
+        This is Number : {count} {'\n'}Edit this screen to start customizing your app!
+      </ThemedText>
+      <ThemedText style={{ marginBottom: 16, fontWeight:'bold'}}>
+        This is Test Function : {thanh("Thành Com")} 
+      </ThemedText>
       <ThemedView style={styles.stepContainer}>
         <ThemedText type="subtitle">Step 1: Try it</ThemedText>
         <ThemedText>
@@ -74,7 +106,41 @@ export default function HomeScreen() {
           <ThemedText type="defaultSemiBold">app-example</ThemedText>.
         </ThemedText>
       </ThemedView>
+      <Button title="Press me" onPress={() => setCount(count + 1)}></Button>
+      <Button
+        title={`Temp : ${temp} °C`}
+        onPress={() =>
+          publishMQTT('test/topic', 'Hello from Expo')
+        }
+      />
+
+      <View style={{ padding: 16 }}>
+  {users.map((item) => (
+    <View
+      key={item.id}
+      style={{
+        padding: 12,
+        marginBottom: 10,
+        borderRadius: 8,
+        backgroundColor: '#eee',
+      }}
+    >
+      <Text style={{ fontWeight: 'bold', fontSize: 16 }}>
+        Full Name : {item.fullname}
+      </Text>
+
+      <Text>Email : {item.email}</Text>
+      <Text>Phone : {item.phone}</Text>
+
+      <Text style={{ color: item.active ? 'green' : 'red' }}> 
+        Status : {item.active ? 'ACTIVE' : 'INACTIVE'}
+      </Text>
+    </View>
+  ))}
+</View>
+
     </ParallaxScrollView>
+    
   );
 }
 
