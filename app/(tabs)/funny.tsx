@@ -1,13 +1,17 @@
+import { RootState } from '@/store';
 import * as Location from 'expo-location';
 import { useEffect, useState } from 'react';
 import { Button, StyleSheet, Text, View } from 'react-native';
 import MapView, { MapPressEvent, Marker } from 'react-native-maps';
+import { useSelector } from 'react-redux';
 
 export default function Funny() {
   const [location, setLocation] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-
+  const { connected, temp, humi, rssid, checkStatus } = useSelector(
+    (state: RootState) => state.mqtt
+  );
   useEffect(() => {
     (async () => {
       // Xin quyền vị trí
@@ -66,6 +70,7 @@ export default function Funny() {
         <View style={styles.info}>
           <Text>Lat: {selectedLocation.latitude}</Text>
           <Text>Lng: {selectedLocation.longitude}</Text>
+          <Text>Status: {checkStatus}</Text>
           <Button
             title="Báo Chốt"
             onPress={() => console.log('Vị trí đã lưu:', selectedLocation)}

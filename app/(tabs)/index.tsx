@@ -5,21 +5,23 @@ import { HelloWave } from '@/components/hello-wave';
 import ParallaxScrollView from '@/components/parallax-scroll-view';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { connectMQTT, publishMQTT } from '@/lib/mqtt';
+import { connectMqtt, publishMQTT } from '@/lib/mqtt';
+import { RootState } from '@/store';
 import { Account } from '@/types/account';
 import { Link } from 'expo-router';
 import { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import { supabase } from '../../lib/supabase';
 
 export default function HomeScreen() {
   const [count, setCount] = useState(0);
   const [users, setUsers] = useState<Account[]>([]);
-  const [temp, setTemp] = useState<string>('---');
+  const { connected, temp, humi, rssid, checkStatus } = useSelector(
+    (state: RootState) => state.mqtt
+  );
   useEffect(() => {
    loadUsers();
-   connectMQTT((value) => {
-      setTemp(value);
-    });
+    connectMqtt();
   }, []);
 
   async function loadUsers() {

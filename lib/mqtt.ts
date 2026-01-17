@@ -1,48 +1,88 @@
+import { store } from '@/store';
 import mqtt from 'mqtt';
+import {
+  setCheckStatus,
+  setConnected,
+  setHumi,
+  setRssid,
+  setTemp,
+} from '../store/mqttSlice';
 
 let client: mqtt.MqttClient | null = null;
 
-type MessageHandler = (value: string) => void;
-let onTempMessage: MessageHandler | null = null;
-
-export function connectMQTT(onMessage: MessageHandler) {
-  onTempMessage = onMessage;
-
+export const connectMqtt = () => {
   if (client) return;
 
   client = mqtt.connect('ws://thanhcom1989.ddns.net:9001', {
-    clientId: 'expo_' + Math.random().toString(16).slice(2),
     username: 'thanhcom',
     password: 'laodaicaha',
     clean: true,
-    keepalive: 60,
-    reconnectPeriod: 3000,
+    connectTimeout: 4000,
   });
 
   client.on('connect', () => {
-    console.log('✅ MQTT connected');
-    client?.subscribe('blynk/temp', { qos: 0 });
+    console.log('MQTT connected');
+    store.dispatch(setConnected(true));
+
+    client?.subscribe([
+      'blynk/temp',
+      'blynk/humi',
+      'blynk/rssid',
+      'blynk/checkstatus',
+    ]);
   });
 
   client.on('message', (topic, message) => {
-    if (topic === 'blynk/temp') {
-      const value = message.toString();
-      console.log('🌡 TEMP:', value);
-      onTempMessage?.(value);
+    const payload = message.toString();
+    //console.log(topic, payload);
+
+    switch (topic) {
+      case 'blynk/temp':
+        store.dispatch(setTemp(Number(payload)));
+        break;
+
+      case 'blynk/humi':
+        store.dispatch(setHumi(Number(payload)));
+        break;
+
+      case 'blynk/rssid':
+        store.dispatch(setRssid(payload));
+        break;
+
+      case 'blynk/checkstatus':
+        store.dispatch(setCheckStatus(payload));
+        break;
     }
   });
 
-  client.on('error', (err) => {
-    console.log('❌ MQTT error:', err.message);
+  client.on('close', () => {
+    store.dispatch(setConnected(false));
   });
-}
+
+  client.on('error', (err) => {
+    console.log('MQTT error:', err);
+  });
+};
 
 export function publishMQTT(topic: string, payload: string) {
-  if (!client) return;
-  client.publish(topic, payload, { qos: 0, retain: false });
-}
+  if (!client || !client.connected) {
+    console.log('⚠️ MQTT chưa kết nối');
+    return;
+  }
 
-export function disconnectMQTT() {
-  client?.end();
-  client = null;
+  client.publish(topic, payload, { qos: 0 }, (err) => {
+    if (err) {
+      console.log('❌ Publish error', err);
+    } else {
+      console.log('📤 Published:', topic, payload);
+    }
+  });
+}
+export function disconnectMqtt() {
+  if (client) {
+    client.end(() => {
+      console.log('MQTT disconnected');
+      client = null;
+    });
+  }
 }
