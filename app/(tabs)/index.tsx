@@ -73,7 +73,15 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
+        <Link
+          href={{
+            pathname: "/modal",
+            params: {
+              step: "2",
+              title: "Nguyễn Danh Thành",
+            },
+          }}
+        >
           <Link.Trigger>
             <ThemedText type="subtitle">Step 2: Explore</ThemedText>
           </Link.Trigger>
@@ -152,6 +160,19 @@ export default function HomeScreen() {
             <Text style={{ color: item.active ? "green" : "red" }}>
               Status : {item.active ? "ACTIVE" : "INACTIVE"}
             </Text>
+            <Link
+              href={{
+                pathname: "/modal",
+                params: {
+                  id: item.id.toString(),
+                  name: item.fullname,
+                  phone: item.phone,
+                  email: item.email,
+                },
+              }}
+            >
+              <Text style={{ color: "blue", marginTop: 8 }}>View Details</Text>
+            </Link>
           </View>
         ))}
       </View>
