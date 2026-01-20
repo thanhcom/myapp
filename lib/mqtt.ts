@@ -32,15 +32,17 @@ export const connectMqtt = () => {
     console.log("✅ MQTT connected");
     store.dispatch(setConnected(true));
 
-    // Re-sub toàn bộ topic đã lưu
-    if (subscribedTopics.size > 0) {
-      subscribeMQTT([...subscribedTopics.entries()]);
-    }
+    subscribeMQTT([
+      ["blynk/temp", 0],
+      ["blynk/humi", 0],
+      ["blynk/rssid", 0],
+      ["blynk/checkstatus", 0],
+    ]);
   });
 
   client.on("message", (topic, message) => {
     const payload = message.toString();
-
+    console.log("📩 MQTT:", topic, message.toString());
     switch (topic) {
       case "blynk/temp":
         store.dispatch(setTemp(Number(payload)));
