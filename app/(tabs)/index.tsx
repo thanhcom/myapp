@@ -20,6 +20,11 @@ export default function HomeScreen() {
   const { connected, temp, humi, rssid, checkStatus } = useSelector(
     (state: RootState) => state.mqtt,
   );
+
+  const handleButton = (text: string, id: number) => {
+    console.log(text, id);
+  };
+
   useEffect(() => {
     loadUsers();
     connectMqtt();
@@ -126,6 +131,7 @@ export default function HomeScreen() {
         </ThemedText>
       </ThemedView>
       <Button title="Press me" onPress={() => setCount(count + 1)}></Button>
+
       <Button
         title={`Temp : ${temp} °C`}
         onPress={() => publishMQTT("test/topic", "Hello from Expo")}
@@ -153,7 +159,6 @@ export default function HomeScreen() {
             <Text style={{ fontWeight: "bold", fontSize: 16 }}>
               Full Name : {item.fullname}
             </Text>
-
             <Text>Email : {item.email}</Text>
             <Text>Phone : {item.phone}</Text>
 
@@ -173,6 +178,10 @@ export default function HomeScreen() {
             >
               <Text style={{ color: "blue", marginTop: 8 }}>View Details</Text>
             </Link>
+            <Button
+              title="Test handleButton"
+              onPress={() => handleButton(item.fullname, item.id)}
+            ></Button>
           </View>
         ))}
       </View>
