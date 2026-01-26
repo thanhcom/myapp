@@ -1,37 +1,33 @@
-import { RootState } from '@/store';
-import * as Location from 'expo-location';
-import { useEffect, useState } from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
-import MapView, { MapPressEvent, Marker } from 'react-native-maps';
-import { useSelector } from 'react-redux';
+import { RootState } from "@/store";
+import * as Location from "expo-location";
+import { useEffect, useState } from "react";
+import { Button, StyleSheet, Text, View } from "react-native";
+import MapView, { MapPressEvent, Marker, UrlTile } from "react-native-maps";
+import { useSelector } from "react-redux";
 
 export default function Funny() {
   const [location, setLocation] = useState<any>(null);
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
-  const { connected, temp, humi, rssid, checkStatus } = useSelector(
-    (state: RootState) => state.mqtt
-  );
+
+  const { checkStatus } = useSelector((state: RootState) => state.mqtt);
+
   useEffect(() => {
     (async () => {
-      // Xin quyền vị trí
       const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setError('Không có quyền truy cập vị trí');
+      if (status !== "granted") {
+        setError("Không có quyền truy cập vị trí");
         return;
       }
 
-      // Lấy vị trí hiện tại
       const loc = await Location.getCurrentPositionAsync({});
       setLocation(loc.coords);
-      setSelectedLocation(loc.coords); // marker ban đầu
+      setSelectedLocation(loc.coords);
     })();
   }, []);
 
-  // 👉 Bấm map để chọn vị trí
   const onMapPress = (event: MapPressEvent) => {
-    const { latitude, longitude } = event.nativeEvent.coordinate;
-    setSelectedLocation({ latitude, longitude });
+    setSelectedLocation(event.nativeEvent.coordinate);
   };
 
   if (error) return <Text>{error}</Text>;
@@ -49,23 +45,24 @@ export default function Funny() {
         }}
         onPress={onMapPress}
       >
+        {/* 🌍 OpenStreetMap */}
+        <UrlTile
+          urlTemplate="https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png"
+          maximumZ={19}
+        />
+
         {selectedLocation && (
           <Marker
-            coordinate={{
-              latitude: selectedLocation.latitude,
-              longitude: selectedLocation.longitude,
-            }}
-            title="Vị trí đã chọn"
-            image={require('../../assets/images/policeman.png')}
+            coordinate={selectedLocation}
             draggable
-            onDragEnd={(e) =>
-              setSelectedLocation(e.nativeEvent.coordinate)
-            }
-          />
+            onDragEnd={(e) => setSelectedLocation(e.nativeEvent.coordinate)}
+          >
+            {/* Marker custom SAFE cho Android build */}
+            <View style={styles.marker} />
+          </Marker>
         )}
       </MapView>
 
-      {/* Hiển thị toạ độ */}
       {selectedLocation && (
         <View style={styles.info}>
           <Text>Lat: {selectedLocation.latitude}</Text>
@@ -73,7 +70,7 @@ export default function Funny() {
           <Text>Status: {checkStatus}</Text>
           <Button
             title="Báo Chốt"
-            onPress={() => console.log('Vị trí đã lưu:', selectedLocation)}
+            onPress={() => console.log("Vị trí đã lưu:", selectedLocation)}
           />
         </View>
       )}
@@ -85,12 +82,20 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
   info: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 20,
     left: 20,
-    backgroundColor: 'white',
+    backgroundColor: "white",
     padding: 10,
     borderRadius: 8,
     elevation: 5,
+  },
+  marker: {
+    width: 16,
+    height: 16,
+    backgroundColor: "red",
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "white",
   },
 });
