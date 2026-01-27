@@ -1,6 +1,6 @@
 import api from "@/lib/axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, Stack, useLocalSearchParams } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -150,6 +150,13 @@ export default function EditPurchase() {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
+      <Stack.Screen
+        options={{
+          title: "Sửa đơn hàng",
+          headerStyle: { backgroundColor: "#3498db" },
+          headerTintColor: "#fff",
+        }}
+      />
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Sửa đơn hàng</Text>
 

@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Button,
   Dimensions,
   Image,
   StyleSheet,
@@ -17,15 +18,22 @@ import {
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.92;
 
+/* ================= TYPES ================= */
+
 interface Product {
   name: string;
   quantity: number;
   price: number;
 }
 
+interface PackageImage {
+  publicId: string;
+  url: string;
+}
+
 interface Purchase {
   id: string;
-  packageImageUrls: string[];
+  packageImages: PackageImage[];
   paymentMethod: string;
   platform: string;
   products: Product[] | null;
@@ -33,6 +41,8 @@ interface Purchase {
   receivedDate: string;
   totalAmount: number;
 }
+
+/* ================= MAIN ================= */
 
 export default function Payment() {
   const [list, setList] = useState<Purchase[]>([]);
@@ -56,7 +66,6 @@ export default function Payment() {
   /* ================= ACTIONS ================= */
 
   const onEdit = (item: Purchase) => {
-    console.log("Edit purchase:", item.id);
     router.push(`/edit/${item.id}`);
   };
 
@@ -78,7 +87,9 @@ export default function Payment() {
     ]);
   };
 
-  const renderImages = (images: string[]) => {
+  /* ================= IMAGE GRID ================= */
+
+  const renderImages = (images: PackageImage[]) => {
     if (!images || images.length === 0) return null;
 
     const imageWidth =
@@ -86,10 +97,10 @@ export default function Payment() {
 
     return (
       <View style={styles.imageGrid}>
-        {images.map((url, index) => (
+        {images.map((img) => (
           <Image
-            key={index}
-            source={{ uri: url }}
+            key={img.publicId}
+            source={{ uri: img.url }}
             style={[styles.gridImage, { width: imageWidth }]}
           />
         ))}
@@ -112,6 +123,7 @@ export default function Payment() {
       }
     >
       <Text style={styles.title}>Lịch Sử Mua Hàng Online</Text>
+      <Button title="Thêm Mới" onPress={() => router.push("/create")} />
 
       {loading && <ActivityIndicator size="large" color="#FF5733" />}
 
@@ -132,7 +144,7 @@ export default function Payment() {
               </TouchableOpacity>
             </View>
 
-            {renderImages(item.packageImageUrls)}
+            {renderImages(item.packageImages)}
 
             <Text style={styles.platform}>{item.platform}</Text>
             <Text style={styles.payment}>Thanh toán: {item.paymentMethod}</Text>
@@ -197,12 +209,8 @@ const styles = StyleSheet.create({
     gap: 10,
     zIndex: 10,
   },
-  edit: {
-    fontSize: 18,
-  },
-  delete: {
-    fontSize: 18,
-  },
+  edit: { fontSize: 18 },
+  delete: { fontSize: 18 },
   imageGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
