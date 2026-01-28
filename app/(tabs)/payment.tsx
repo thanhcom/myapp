@@ -69,7 +69,7 @@ export default function Payment() {
     router.push(`/edit/${item.id}`);
   };
 
-  const onDelete = (id: string) => {
+  const onDelete = (purchase: Purchase) => {
     Alert.alert("Xác nhận xóa", "Bạn có chắc muốn xóa đơn hàng này?", [
       { text: "Hủy", style: "cancel" },
       {
@@ -77,10 +77,23 @@ export default function Payment() {
         style: "destructive",
         onPress: async () => {
           try {
-            await api.delete(`/purchases/${id}`);
-            setList((prev) => prev.filter((i) => i.id !== id));
+            // 1️⃣ Xóa ảnh
+            const publicIds = purchase.packageImages?.map((i) => i.publicId);
+
+            if (publicIds?.length) {
+              await api.delete("/upload/images", {
+                params: { publicIds },
+              });
+            }
+
+            // 2️⃣ Xóa purchase
+            await api.delete(`/purchases/${purchase.id}`);
+
+            // 3️⃣ Update UI
+            setList((prev) => prev.filter((i) => i.id !== purchase.id));
           } catch (err) {
             console.log("Delete error:", err);
+            Alert.alert("❌ Lỗi", "Xóa đơn hàng thất bại");
           }
         },
       },
@@ -139,7 +152,7 @@ export default function Payment() {
               <TouchableOpacity onPress={() => onEdit(item)}>
                 <Text style={styles.edit}>✏️</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => onDelete(item.id)}>
+              <TouchableOpacity onPress={() => onDelete(item)}>
                 <Text style={styles.delete}>🗑️</Text>
               </TouchableOpacity>
             </View>

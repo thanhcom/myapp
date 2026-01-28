@@ -3,12 +3,10 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -78,10 +76,30 @@ export default function CreatePurchase() {
 
   const [showPurchasePicker, setShowPurchasePicker] = useState(false);
   const [showReceivedPicker, setShowReceivedPicker] = useState(false);
+  const isSavedRef = React.useRef(false);
 
   /* ====== UPLOAD PROGRESS (THÊM) ====== */
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  //
+  useEffect(() => {
+    return () => {
+      // ✅ đã lưu thì KHÔNG cleanup
+      if (isSavedRef.current) return;
+
+      if (!packageImages.length) return;
+
+      const publicIds = packageImages.map((i) => i.publicId);
+
+      api
+        .delete("/upload/images", {
+          params: { publicIds },
+        })
+        .catch(() => {
+          console.log("⚠️ Cleanup images failed");
+        });
+    };
+  }, [packageImages]);
 
   /* ================= PRODUCTS ================= */
   const addProduct = () =>
@@ -184,7 +202,8 @@ export default function CreatePurchase() {
         Alert.alert("⚠️ Thiếu dữ liệu", "Vui lòng nhập đầy đủ thông tin");
         return;
       }
-      console.log(platform);
+      // ⭐ SET TRƯỚC KHI NAV (SYNC)
+      isSavedRef.current = true;
 
       await api.post(
         "/purchases",
@@ -211,10 +230,7 @@ export default function CreatePurchase() {
 
   /* ================= UI ================= */
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <>
       <Stack.Screen
         options={{
           title: "Tạo đơn hàng",
@@ -357,14 +373,13 @@ export default function CreatePurchase() {
         <Card title="💰 Tổng tiền">
           <Text style={styles.total}>{totalAmount.toLocaleString()} ₫</Text>
         </Card>
-
         <Card title="⚙️ Hành động">
           <TouchableOpacity style={styles.save} onPress={save}>
             <Text style={styles.saveText}>➕ Tạo đơn hàng</Text>
           </TouchableOpacity>
         </Card>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </>
   );
 }
 

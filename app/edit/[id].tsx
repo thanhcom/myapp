@@ -2,14 +2,17 @@ import api from "@/lib/axios";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import React, { useEffect, useState } from "react";
+import {
+  router,
+  Stack,
+  useFocusEffect,
+  useLocalSearchParams,
+} from "expo-router";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -84,28 +87,65 @@ export default function EditPurchase() {
 
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const originalImagesRef = React.useRef<UploadedImage[]>([]);
+  const isSavedRef = React.useRef(false);
 
   /* ================= FETCH DETAIL ================= */
 
   const fetchDetail = React.useCallback(async () => {
+    if (!id) return;
+
     try {
       setLoading(true);
+
       const res = await api.get(`/purchases/${id}`);
       const d = res.data.data;
+
+      const imgs: UploadedImage[] = d.packageImages ?? [];
+
+      // ⭐ snapshot BẢN SAO – KHÔNG dính reference
+      originalImagesRef.current = imgs.map((i) => ({ ...i }));
 
       setPlatform(d.platform ?? "");
       setPaymentMethod(d.paymentMethod ?? "");
       setProducts(d.products ?? []);
-      setPackageImages(d.packageImages ?? []);
+      setPackageImages(imgs.map((i) => ({ ...i })));
       setPurchaseDate(new Date(d.purchaseDate));
       setReceivedDate(new Date(d.receivedDate));
-    } catch {
+    } catch (e) {
       Alert.alert("❌ Lỗi", "Không load được dữ liệu");
       router.back();
     } finally {
       setLoading(false);
     }
   }, [id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        if (isSavedRef.current) return;
+
+        const original = originalImagesRef.current;
+        const current = packageImages;
+
+        const newImages = current.filter(
+          (img) => !original.some((o) => o.publicId === img.publicId),
+        );
+
+        if (!newImages.length) return;
+
+        api
+          .delete("/upload/images", {
+            params: {
+              publicIds: newImages.map((i) => i.publicId),
+            },
+          })
+          .catch(() => {
+            console.log("Cleanup edit images failed");
+          });
+      };
+    }, [packageImages]),
+  );
 
   useEffect(() => {
     if (!id) return;
@@ -196,6 +236,21 @@ export default function EditPurchase() {
   /* ================= SAVE ================= */
   const save = async () => {
     try {
+      const original = originalImagesRef.current;
+      const current = packageImages;
+
+      const removedImages = original.filter(
+        (o) => !current.some((c) => c.publicId === o.publicId),
+      );
+
+      if (removedImages.length) {
+        await api.delete("/upload/images", {
+          params: {
+            publicIds: removedImages.map((i) => i.publicId),
+          },
+        });
+      }
+
       await api.put(`/purchases/${id}`, {
         platform,
         paymentMethod,
@@ -206,6 +261,7 @@ export default function EditPurchase() {
         totalAmount,
       });
 
+      isSavedRef.current = true;
       Alert.alert("✅ Thành công", "Đã cập nhật đơn hàng");
       router.replace("/(tabs)/payment");
     } catch {
@@ -224,10 +280,7 @@ export default function EditPurchase() {
 
   /* ================= UI ================= */
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
+    <>
       <Stack.Screen
         options={{
           title: "Sửa đơn hàng",
@@ -235,7 +288,6 @@ export default function EditPurchase() {
           headerTintColor: "#fff",
         }}
       />
-
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Sửa đơn hàng</Text>
 
@@ -363,7 +415,7 @@ export default function EditPurchase() {
           </TouchableOpacity>
         </Card>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </>
   );
 }
 
