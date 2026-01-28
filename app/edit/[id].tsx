@@ -161,7 +161,8 @@ export default function EditPurchase() {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (e) => {
           if (!e.total) return;
-          setUploadProgress(Math.round((e.loaded * 100) / e.total));
+          const percent = Math.round((e.loaded * 100) / e.total);
+          setUploadProgress(Math.min(percent, 100));
         },
       });
 
