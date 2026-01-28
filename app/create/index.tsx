@@ -209,52 +209,6 @@ export default function CreatePurchase() {
     }
   };
 
-  const save1 = async () => {
-    try {
-      if (!platform || products.length === 0) {
-        Alert.alert("⚠️ Thiếu dữ liệu", "Vui lòng nhập đầy đủ thông tin");
-        return;
-      }
-
-      const payload = {
-        platform,
-        paymentMethod,
-        products,
-        packageImages, // [{ publicId, url }]
-        purchaseDate: purchaseDate.toISOString().slice(0, 10),
-        receivedDate: receivedDate.toISOString().slice(0, 10),
-        totalAmount,
-      };
-
-      console.log("SEND JSON 👉", JSON.stringify(payload, null, 2));
-
-      const res = await fetch(`http://192.168.1.28:8080/api/purchases`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          // nếu có auth:
-          // Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        console.error("❌ BACKEND ERROR:", text);
-        throw new Error("Create purchase failed");
-      }
-
-      const data = await res.json();
-      console.log("✅ CREATE OK:", data);
-
-      Alert.alert("✅ Thành công", "Đã tạo đơn hàng mới");
-      router.replace("/(tabs)/payment");
-    } catch (e) {
-      console.error(e);
-      Alert.alert("❌ Lỗi", "Không thể tạo đơn hàng");
-    }
-  };
-
   /* ================= UI ================= */
   return (
     <KeyboardAvoidingView
@@ -405,7 +359,7 @@ export default function CreatePurchase() {
         </Card>
 
         <Card title="⚙️ Hành động">
-          <TouchableOpacity style={styles.save} onPress={save1}>
+          <TouchableOpacity style={styles.save} onPress={save}>
             <Text style={styles.saveText}>➕ Tạo đơn hàng</Text>
           </TouchableOpacity>
         </Card>

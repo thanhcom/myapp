@@ -1,5 +1,5 @@
 import ParallaxScrollView from "@/components/parallax-scroll-view";
-import { IconSymbol } from "@/components/ui/icon-symbol.ios";
+import { IconSymbol } from "@/components/ui/icon-symbol";
 import api from "@/lib/axios";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -112,12 +112,12 @@ export default function Payment() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#D0D0D0", dark: "#353636" }}
+      headerBackgroundColor={{ light: "#d8eff3", dark: "#0d1368" }}
       headerImage={
         <IconSymbol
           size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
+          color="#d0acb9"
+          name="cart.fill"
           style={styles.headerImage}
         />
       }
@@ -146,7 +146,7 @@ export default function Payment() {
 
             {renderImages(item.packageImages)}
 
-            <Text style={styles.platform}>{item.platform}</Text>
+            <Text style={styles.platform}>Đơn Mua Tại : {item.platform}</Text>
             <Text style={styles.payment}>Thanh toán: {item.paymentMethod}</Text>
 
             <Text style={styles.date}>
