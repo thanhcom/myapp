@@ -86,12 +86,8 @@ export default function EditPurchase() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   /* ================= FETCH DETAIL ================= */
-  useEffect(() => {
-    if (!id) return;
-    fetchDetail();
-  }, [id]);
 
-  const fetchDetail = async () => {
+  const fetchDetail = React.useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get(`/purchases/${id}`);
@@ -109,7 +105,12 @@ export default function EditPurchase() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    if (!id) return;
+    fetchDetail();
+  }, [id, fetchDetail]);
 
   /* ================= PRODUCTS ================= */
   const addProduct = () =>
