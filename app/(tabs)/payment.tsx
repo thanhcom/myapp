@@ -2,7 +2,7 @@ import ParallaxScrollView from "@/components/parallax-scroll-view";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import api from "@/lib/axios";
 import { router } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,6 +11,7 @@ import {
   Image,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -46,21 +47,71 @@ interface Purchase {
 
 export default function Payment() {
   const [list, setList] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [inputPage, setInputPage] = useState("");
+
+  const [pageNum, setPageNum] = useState(0); // BẮT ĐẦU = 0
+  const [pageSize] = useState(2);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+
+  const fetchPurchases = useCallback(
+    async (page: number) => {
+      if (loading) return;
+      try {
+        const res = await api.get("/purchases/search", {
+          params: { page, size: pageSize },
+        });
+
+        setList(res.data.data || []);
+        setPageNum(res.data.pageInfo.currentPage - 1);
+        setTotalPages(res.data.pageInfo.totalPage);
+        setHasNext(res.data.pageInfo.hasNext);
+        setHasPrevious(res.data.pageInfo.hasPrevious);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loading, pageSize],
+  );
 
   useEffect(() => {
-    fetchPurchases();
-  }, []);
+    fetchPurchases(0);
+  }, [fetchPurchases]);
 
-  const fetchPurchases = async () => {
-    try {
-      const res = await api.get("/purchases/search");
-      setList(res.data.data || []);
-    } catch (err) {
-      console.log("Fetch purchase error:", err);
-    } finally {
-      setLoading(false);
+  // Kiểm tra có trang tiếp theo không
+  const nextPage = () => {
+    if (pageNum + 1 < totalPages) {
+      fetchPurchases(pageNum + 1);
     }
+  };
+  //
+  const prevPage = () => {
+    if (pageNum > 0) {
+      fetchPurchases(pageNum - 1);
+    }
+  };
+  // Đi đến trang cụ thể
+  const goToPage = () => {
+    const page = Number(inputPage);
+
+    // validate
+    if (isNaN(page)) {
+      Alert.alert("Lỗi", "Nhập số trang hợp lệ");
+      return;
+    }
+
+    // UI nhập 1-based, backend 0-based
+    const targetPage = page - 1;
+
+    if (targetPage < 0 || targetPage >= totalPages) {
+      Alert.alert("Lỗi", "Trang không tồn tại");
+      return;
+    }
+
+    fetchPurchases(targetPage);
+    setInputPage("");
   };
 
   /* ================= ACTIONS ================= */
@@ -181,6 +232,48 @@ export default function Payment() {
             )}
           </View>
         ))}
+      {/* PAGINATION */}
+      <View style={styles.paginationWrapper}>
+        {/* HÀNG 1: PREV - INFO - NEXT */}
+        <View style={styles.pagination}>
+          <TouchableOpacity
+            onPress={prevPage}
+            disabled={!hasPrevious || loading}
+            style={[styles.pageBtn, !hasPrevious && styles.disabled]}
+          >
+            <Text style={styles.pageText}>◀ Prev</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.pageInfo}>
+            Trang {pageNum + 1} / {totalPages}
+          </Text>
+
+          <TouchableOpacity
+            onPress={nextPage}
+            disabled={!hasNext || loading}
+            style={[styles.pageBtn, !hasNext && styles.disabled]}
+          >
+            <Text style={styles.pageText}>Next ▶</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* HÀNG 2: GOTO PAGE */}
+        <View style={styles.gotoBox}>
+          <Text>Đi tới:</Text>
+
+          <TextInput
+            value={inputPage}
+            onChangeText={setInputPage}
+            keyboardType="number-pad"
+            placeholder="Trang"
+            style={styles.gotoInput}
+          />
+
+          <TouchableOpacity onPress={goToPage} style={styles.gotoBtn}>
+            <Text style={{ color: "#fff", fontWeight: "bold" }}>GO</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </ParallaxScrollView>
   );
 }
@@ -262,5 +355,61 @@ const styles = StyleSheet.create({
   product: {
     fontSize: 13,
     color: "#555",
+  },
+  // PAGINATION
+  pagination: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginVertical: 20,
+  },
+
+  pageBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    backgroundColor: "#FF5733",
+    borderRadius: 8,
+  },
+
+  pageText: {
+    color: "#fff",
+    fontWeight: "bold",
+  },
+
+  pageInfo: {
+    fontWeight: "bold",
+    color: "#333",
+  },
+
+  disabled: {
+    backgroundColor: "#ccc",
+  },
+  paginationWrapper: {
+    marginVertical: 20,
+    gap: 10,
+  },
+
+  gotoBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  gotoInput: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: 70,
+    textAlign: "center",
+  },
+
+  gotoBtn: {
+    backgroundColor: "#2ECC71",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
   },
 });
