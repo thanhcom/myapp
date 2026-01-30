@@ -4,10 +4,11 @@ import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import { router, Stack } from "expo-router";
 import React, { useEffect, useState } from "react";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+
 import {
   Alert,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -238,8 +239,13 @@ export default function CreatePurchase() {
           headerTintColor: "#fff",
         }}
       />
-
-      <ScrollView style={styles.container}>
+      <KeyboardAwareScrollView
+        style={styles.container}
+        enableOnAndroid
+        keyboardShouldPersistTaps="always"
+        extraScrollHeight={150}
+        enableAutomaticScroll
+      >
         <Text style={styles.title}>Tạo đơn hàng mới</Text>
 
         <Card title="🧾 Thông tin đơn hàng">
@@ -378,7 +384,7 @@ export default function CreatePurchase() {
             <Text style={styles.saveText}>➕ Tạo đơn hàng</Text>
           </TouchableOpacity>
         </Card>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </>
   );
 }

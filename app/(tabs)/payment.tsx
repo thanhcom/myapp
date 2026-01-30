@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.92;
@@ -53,7 +54,7 @@ export default function Payment() {
   const [pagingLoading, setPagingLoading] = useState(false);
 
   const [pageNum, setPageNum] = useState(0); // BẮT ĐẦU = 0
-  const [pageSize] = useState(2);
+  const [pageSize] = useState(20);
   const [totalPages, setTotalPages] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
@@ -220,7 +221,6 @@ export default function Payment() {
     >
       <Text style={styles.title}>Lịch Sử Mua Hàng Online</Text>
       <Button title="Thêm Mới" onPress={() => router.push("/create")} />
-
       <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
         <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
           <Text style={{ fontSize: 22 }}>🔍</Text>
@@ -228,15 +228,20 @@ export default function Payment() {
       </View>
       {showSearch && (
         <View style={styles.searchBox}>
-          <TextInput
-            value={keyword}
-            onChangeText={setKeyword}
-            placeholder="Tìm theo platform, sản phẩm..."
-            style={styles.searchInput}
-            returnKeyType="search"
-            onSubmitEditing={onSearch}
-          />
-
+          <KeyboardAwareScrollView
+            enableOnAndroid
+            keyboardShouldPersistTaps="always"
+            extraScrollHeight={120}
+          >
+            <TextInput
+              value={keyword}
+              onChangeText={setKeyword}
+              placeholder="Tìm theo platform, sản phẩm..."
+              style={styles.searchInput}
+              returnKeyType="search"
+              onSubmitEditing={onSearch}
+            />
+          </KeyboardAwareScrollView>
           <TouchableOpacity onPress={onSearch} style={styles.searchBtn}>
             <Text style={{ color: "#fff" }}>Tìm</Text>
           </TouchableOpacity>

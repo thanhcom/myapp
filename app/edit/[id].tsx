@@ -13,13 +13,13 @@ import {
   ActivityIndicator,
   Alert,
   Image,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 /* ================= TYPES ================= */
 interface Product {
@@ -288,7 +288,13 @@ export default function EditPurchase() {
           headerTintColor: "#fff",
         }}
       />
-      <ScrollView style={styles.container}>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.container}
+        enableOnAndroid
+        keyboardShouldPersistTaps="always"
+        extraScrollHeight={150}
+        enableAutomaticScroll
+      >
         <Text style={styles.title}>Sửa đơn hàng</Text>
 
         <Card title="🧾 Thông tin đơn hàng">
@@ -414,7 +420,7 @@ export default function EditPurchase() {
             <Text style={styles.saveText}>💾 Lưu thay đổi</Text>
           </TouchableOpacity>
         </Card>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </>
   );
 }
