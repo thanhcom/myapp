@@ -47,8 +47,10 @@ interface Purchase {
 
 export default function Payment() {
   const [list, setList] = useState<Purchase[]>([]);
-  const [loading, setLoading] = useState(false);
   const [inputPage, setInputPage] = useState("");
+
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [pagingLoading, setPagingLoading] = useState(false);
 
   const [pageNum, setPageNum] = useState(0); // BẮT ĐẦU = 0
   const [pageSize] = useState(2);
@@ -56,41 +58,59 @@ export default function Payment() {
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
 
+  //search purchases
+  const [keyword, setKeyword] = useState("");
+  const [showSearch, setShowSearch] = useState(false);
+
   const fetchPurchases = useCallback(
-    async (page: number) => {
-      if (loading) return;
+    async (page: number, isInit = false) => {
+      if (isInit) {
+        setInitialLoading(true);
+      } else {
+        setPagingLoading(true);
+      }
       try {
         const res = await api.get("/purchases/search", {
-          params: { page, size: pageSize },
+          params: {
+            page,
+            size: pageSize,
+            keyword: keyword.trim() || undefined,
+          },
         });
 
+        const pageInfo = res.data.pageInfo;
+
         setList(res.data.data || []);
-        setPageNum(res.data.pageInfo.currentPage - 1);
-        setTotalPages(res.data.pageInfo.totalPage);
-        setHasNext(res.data.pageInfo.hasNext);
-        setHasPrevious(res.data.pageInfo.hasPrevious);
+        setPageNum(pageInfo.currentPage - 1);
+        setTotalPages(pageInfo.totalPage);
+        setHasNext(pageInfo.hasNext);
+        setHasPrevious(pageInfo.hasPrevious);
+      } catch (e) {
+        console.log(e);
       } finally {
-        setLoading(false);
+        if (isInit) {
+          setInitialLoading(false);
+        } else {
+          setPagingLoading(false);
+        }
       }
     },
-    [loading, pageSize],
+    [pageSize, keyword],
   );
 
   useEffect(() => {
-    fetchPurchases(0);
+    fetchPurchases(0, true);
   }, [fetchPurchases]);
 
   // Kiểm tra có trang tiếp theo không
   const nextPage = () => {
-    if (pageNum + 1 < totalPages) {
-      fetchPurchases(pageNum + 1);
-    }
+    if (!hasNext || pagingLoading) return;
+    fetchPurchases(pageNum + 1);
   };
-  //
+  // Kiểm tra có trang trước không
   const prevPage = () => {
-    if (pageNum > 0) {
-      fetchPurchases(pageNum - 1);
-    }
+    if (!hasPrevious || pagingLoading) return;
+    fetchPurchases(pageNum - 1);
   };
   // Đi đến trang cụ thể
   const goToPage = () => {
@@ -112,6 +132,18 @@ export default function Payment() {
 
     fetchPurchases(targetPage);
     setInputPage("");
+  };
+
+  // Tìm kiếm
+  const onSearch = () => {
+    setPageNum(0);
+    fetchPurchases(0);
+  };
+
+  const clearSearch = () => {
+    setKeyword("");
+    setPageNum(0);
+    fetchPurchases(0);
   };
 
   /* ================= ACTIONS ================= */
@@ -189,13 +221,41 @@ export default function Payment() {
       <Text style={styles.title}>Lịch Sử Mua Hàng Online</Text>
       <Button title="Thêm Mới" onPress={() => router.push("/create")} />
 
-      {loading && <ActivityIndicator size="large" color="#FF5733" />}
+      <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
+        <TouchableOpacity onPress={() => setShowSearch(!showSearch)}>
+          <Text style={{ fontSize: 22 }}>🔍</Text>
+        </TouchableOpacity>
+      </View>
+      {showSearch && (
+        <View style={styles.searchBox}>
+          <TextInput
+            value={keyword}
+            onChangeText={setKeyword}
+            placeholder="Tìm theo platform, sản phẩm..."
+            style={styles.searchInput}
+            returnKeyType="search"
+            onSubmitEditing={onSearch}
+          />
 
-      {!loading && list.length === 0 && (
+          <TouchableOpacity onPress={onSearch} style={styles.searchBtn}>
+            <Text style={{ color: "#fff" }}>Tìm</Text>
+          </TouchableOpacity>
+
+          {keyword.length > 0 && (
+            <TouchableOpacity onPress={clearSearch}>
+              <Text style={{ color: "#999" }}>✖</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
+      {initialLoading && <ActivityIndicator size="large" color="#FF5733" />}
+
+      {!initialLoading && list.length === 0 && (
         <Text style={styles.empty}>Chưa có đơn hàng nào</Text>
       )}
 
-      {!loading &&
+      {!initialLoading &&
         list.map((item) => (
           <View key={item.id} style={styles.card}>
             {/* ACTION BUTTONS */}
@@ -238,7 +298,7 @@ export default function Payment() {
         <View style={styles.pagination}>
           <TouchableOpacity
             onPress={prevPage}
-            disabled={!hasPrevious || loading}
+            disabled={!hasPrevious || pagingLoading}
             style={[styles.pageBtn, !hasPrevious && styles.disabled]}
           >
             <Text style={styles.pageText}>◀ Prev</Text>
@@ -250,7 +310,7 @@ export default function Payment() {
 
           <TouchableOpacity
             onPress={nextPage}
-            disabled={!hasNext || loading}
+            disabled={!hasNext || pagingLoading}
             style={[styles.pageBtn, !hasNext && styles.disabled]}
           >
             <Text style={styles.pageText}>Next ▶</Text>
@@ -411,5 +471,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
+  },
+  //Search box
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+    paddingHorizontal: 10,
+  },
+
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  searchBtn: {
+    backgroundColor: "#3498DB",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
   },
 });
