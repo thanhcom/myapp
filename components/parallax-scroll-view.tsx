@@ -56,6 +56,7 @@ export default function ParallaxScrollView({
       ref={scrollRef}
       style={{ backgroundColor, flex: 1 }}
       scrollEventThrottle={16}
+      keyboardShouldPersistTaps="always"
       {...scrollProps}
     >
       <Animated.View

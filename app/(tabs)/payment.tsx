@@ -9,13 +9,13 @@ import {
   Button,
   Dimensions,
   Image,
+  Keyboard,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 const { width } = Dimensions.get("window");
 const CARD_WIDTH = width * 0.92;
@@ -228,21 +228,25 @@ export default function Payment() {
       </View>
       {showSearch && (
         <View style={styles.searchBox}>
-          <KeyboardAwareScrollView
-            enableOnAndroid
-            keyboardShouldPersistTaps="always"
-            extraScrollHeight={120}
+          <TextInput
+            value={keyword}
+            onChangeText={setKeyword}
+            placeholder="Tìm theo platform, sản phẩm..."
+            style={styles.searchInput}
+            returnKeyType="search"
+            onSubmitEditing={() => {
+              Keyboard.dismiss();
+              onSearch();
+            }}
+          />
+
+          <TouchableOpacity
+            onPress={() => {
+              Keyboard.dismiss();
+              onSearch();
+            }}
+            style={styles.searchBtn}
           >
-            <TextInput
-              value={keyword}
-              onChangeText={setKeyword}
-              placeholder="Tìm theo platform, sản phẩm..."
-              style={styles.searchInput}
-              returnKeyType="search"
-              onSubmitEditing={onSearch}
-            />
-          </KeyboardAwareScrollView>
-          <TouchableOpacity onPress={onSearch} style={styles.searchBtn}>
             <Text style={{ color: "#fff" }}>Tìm</Text>
           </TouchableOpacity>
 
