@@ -55,11 +55,9 @@ export default function Funny() {
           <Marker
             coordinate={selectedLocation}
             draggable
+            image={require("@/assets/images/policeman.png")}
             onDragEnd={(e) => setSelectedLocation(e.nativeEvent.coordinate)}
-          >
-            {/* Marker custom SAFE cho Android build */}
-            <View style={styles.marker} />
-          </Marker>
+          ></Marker>
         )}
       </MapView>
 
@@ -89,13 +87,5 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 8,
     elevation: 5,
-  },
-  marker: {
-    width: 16,
-    height: 16,
-    backgroundColor: "red",
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: "white",
   },
 });
