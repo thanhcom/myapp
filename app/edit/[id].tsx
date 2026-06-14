@@ -164,9 +164,16 @@ export default function EditPurchase() {
     field: keyof Product,
     value: string,
   ) => {
-    const clone = [...products];
-    clone[index][field] = field === "name" ? value : Number(value) || 0;
-    setProducts(clone);
+    setProducts((prev) =>
+      prev.map((item, i) =>
+        i === index
+          ? {
+              ...item,
+              [field]: field === "name" ? value : Number(value) || 0,
+            }
+          : item,
+      ),
+    );
   };
 
   /* ================= IMAGE PICK & UPLOAD ================= */
