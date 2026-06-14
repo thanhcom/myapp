@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://op.thanhcom.site/api",
+  baseURL: "https://op.thanhtrang.online/api",
   //baseURL: "http://192.168.1.28:8080/api",
   timeout: 30000,
   headers: {
